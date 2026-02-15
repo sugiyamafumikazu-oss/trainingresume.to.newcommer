@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外国人技能実習生受入事業 - 業務フロー＆監査ドリル</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #fdfbf7;
+            color: #4a4a4a;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+        }
+        /* Transitions */
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .quiz-option:hover { transform: translateY(-2px); }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals (Base: #fdfbf7) with Educational Colors (Teal/Amber/Indigo). -->
+    <!-- Application Structure Plan:
+         1. Intro: Context setting.
+         2. Interactive Master Gantt Chart: Visualizes the 7-9 month process. (Retained from previous version).
+         3. Expanded Audit Simulation Module:
+            - Now features a multi-step quiz interface ("Drill Mode").
+            - Contains 5 distinct scenarios covering: Overtime, Min Wage, Passport Control, Illegal Deductions, Forced Savings.
+            - User gets immediate feedback with legal rationale.
+    -->
+    <!-- Visualization & Content Choices:
+         1. Gantt Chart (Chart.js): Best for timeline understanding.
+         2. Quiz Interface (HTML/JS): Interactive learning for "Judgment" skills.
+            - Scenarios selected based on common TITP violations.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="text-slate-700 pb-20">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <h1 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                <span>📘</span>
+                <span>新人職員研修ポータル (完全版)</span>
+            </h1>
+            <span class="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded font-bold">監査ドリル機能搭載</span>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- Intro -->
+        <section class="bg-white rounded-xl shadow-sm p-6 border border-stone-100">
+            <h2 class="text-lg font-bold text-stone-800 mb-2">業務全体の流れ（タイムライン）</h2>
+            <p class="text-stone-600 text-sm leading-relaxed">
+                技能実習生の受入準備期間（6〜8ヶ月）と、その後の監理業務の流れを把握しましょう。<br>
+                下のチャートのバーをクリックすると、各フェーズの業務詳細が表示されます。
+            </p>
+        </section>
+
+        <!-- MASTER GANTT CHART SECTION -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left: The Chart -->
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-4 border border-stone-100 flex flex-col">
+                <div class="flex justify-between items-center mb-4 px-2">
+                    <h3 class="font-bold text-stone-700">🗓 スケジュール・ガントチャート</h3>
+                    <span class="text-xs text-stone-400">バーをクリックして詳細を表示</span>
+                </div>
+                <div class="chart-container w-full">
+                    <canvas id="ganttChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Right: Dynamic Detail Panel -->
+            <div class="lg:col-span-1 bg-stone-50 rounded-xl shadow-inner border border-stone-200 p-6 flex flex-col relative overflow-hidden h-[450px]">
+                <div id="detail-panel" class="fade-in h-full overflow-y-auto">
+                    <!-- Default Content -->
+                    <div class="text-center text-stone-400 mt-20">
+                        <div class="text-4xl mb-4">👈</div>
+                        <p>左のチャートから<br>工程を選択してください</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Divider -->
+        <div class="border-t border-stone-200 my-4"></div>
+
+        <!-- AUDIT SIMULATION SECTION (Expanded) -->
+        <section id="audit-section">
+            <div class="mb-6 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-stone-800 flex items-center gap-2">
+                        <span class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm shadow">問</span>
+                        監査実務トレーニング (全5問)
+                    </h2>
+                    <p class="text-stone-600 mt-2 text-sm">
+                        毎月の企業訪問（監査）で遭遇しがちな事例です。法令違反か否か、あなたの判断力が試されます。
+                    </p>
+                </div>
+                <!-- Progress Indicator -->
+                <div class="text-right">
+                    <span id="quiz-progress" class="text-2xl font-bold text-indigo-600">1</span>
+                    <span class="text-stone-400 text-sm">/ 5</span>
+                </div>
+            </div>
+
+            <!-- Quiz Container -->
+            <div class="bg-white rounded-2xl shadow-lg border border-stone-200 overflow-hidden flex flex-col md:flex-row min-h-[400px]">
+                
+                <!-- Left: Question Area -->
+                <div class="w-full md:w-1/2 p-8 border-b md:border-b-0 md:border-r border-stone-100 bg-stone-50">
+                    <div class="mb-2">
+                        <span class="bg-stone-200 text-stone-600 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">Case Study</span>
+                    </div>
+                    <h3 id="q-title" class="text-xl font-bold text-stone-800 mb-4 h-16 flex items-center">
+                        <!-- Title inserted by JS -->
+                    </h3>
+                    
+                    <div class="bg-white p-5 rounded-xl border border-stone-200 shadow-sm mb-6">
+                        <p id="q-text" class="text-stone-700 leading-relaxed font-medium">
+                            <!-- Question text inserted by JS -->
+                        </p>
+                    </div>
+
+                    <p class="text-sm text-stone-500 mb-4 font-bold">職員としての判断は？</p>
+                    
+                    <div class="grid gap-3" id="q-options">
+                        <!-- Options buttons inserted by JS -->
+                    </div>
+                </div>
+
+                <!-- Right: Feedback Area -->
+                <div class="w-full md:w-1/2 p-8 flex flex-col justify-center bg-white relative">
+                    <!-- Default State -->
+                    <div id="feedback-placeholder" class="text-center text-stone-300">
+                        <div class="text-6xl mb-4">⚖️</div>
+                        <p>左側の選択肢を選んで<br>回答してください</p>
+                    </div>
+
+                    <!-- Result State (Hidden initially) -->
+                    <div id="feedback-content" class="hidden slide-in">
+                        <div id="feedback-header" class="text-2xl font-bold mb-4 flex items-center justify-center gap-2">
+                            <!-- Correct/Incorrect Header -->
+                        </div>
+                        <div class="bg-stone-50 rounded-xl p-5 border border-stone-100 text-sm text-stone-600 leading-relaxed mb-6">
+                            <h4 class="font-bold text-stone-800 mb-2 border-b border-stone-200 pb-1">解説</h4>
+                            <div id="feedback-text">
+                                <!-- Explanation -->
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button onclick="nextQuestion()" id="next-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow transition transform hover:scale-105">
+                                次の問題へ進む &rarr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-100 py-6 text-center text-stone-500 text-xs mt-12 border-t border-stone-200">
+        © 2024 中小企業等事業協同組合 研修資料
+    </footer>
+
+    <!-- Logic -->
+    <script>
+        // --- Gantt Data (Same as before) ---
+        const ganttData = [
+            {
+                id: 'phase1', label: '1. 組合加入・趣旨説明', range: [0, 1], color: '#94a3b8',
+                content: `<h3 class="text-lg font-bold text-teal-700 mb-2">1. 組合加入・趣旨説明</h3><p class="text-xs text-stone-500 mb-3">目安期間: 最初の1ヶ月</p><div class="space-y-3 text-sm text-stone-700"><p><strong>【業務の第一歩】</strong><br>受入企業に対して、まずは「中小企業等事業協同組合」へ加入していただきます。</p><ul class="list-disc pl-4 space-y-1"><li>定款の確認と出資金受領</li><li><strong>趣旨説明:</strong> 技能実習は労働力不足の解消ではなく「国際貢献」であることを経営者に深く理解してもらいます。</li></ul></div>`
+            },
+            {
+                id: 'phase2', label: '2. 求人票・条件提示', range: [0.8, 1.8], color: '#2dd4bf',
+                content: `<h3 class="text-lg font-bold text-teal-700 mb-2">2. 求人票・条件提示</h3><p class="text-xs text-stone-500 mb-3">目安期間: 1ヶ月目〜</p><div class="space-y-3 text-sm text-stone-700"><p><strong>【マッチング準備】</strong><br>企業から求人票を受領し、海外へ送ります。</p><ul class="list-disc pl-4 space-y-1"><li><strong>求人票作成:</strong> 職種、賃金（最低賃金以上）、宿舎などの条件を精査します。</li><li><strong>海外連携:</strong> 提携する送り出し機関へ条件を提示し、候補者の募集を依頼します。</li></ul></div>`
+            },
+            {
+                id: 'phase3', label: '3. 現地募集・面接', range: [1.8, 2.8], color: '#2dd4bf',
+                content: `<h3 class="text-lg font-bold text-teal-700 mb-2">3. 現地募集・面接</h3><p class="text-xs text-stone-500 mb-3">目安期間: 2ヶ月目〜</p><div class="space-y-3 text-sm text-stone-700"><p><strong>【人選】</strong><br>送り出し機関が集めた候補者の中から選考します。</p><ul class="list-disc pl-4 space-y-1"><li><strong>面接実施:</strong> 現地渡航またはZoom等で実施。</li><li><strong>選考基準:</strong> 技術適性だけでなく、日本語学習への意欲や性格も重視します。</li></ul></div>`
+            },
+            {
+                id: 'phase4', label: '4. 認定計画策定・提出', range: [2.8, 5.5], color: '#f59e0b',
+                content: `<h3 class="text-lg font-bold text-amber-700 mb-2">4. 認定計画の策定・提出</h3><p class="text-xs text-stone-500 mb-3">目安期間: 3ヶ月目〜5ヶ月目</p><div class="space-y-3 text-sm text-stone-700"><p><strong>【最重要事務】</strong><br>ビザ申請の前に、「外国人技能実習機構」による計画認定が必要です。</p><ul class="list-disc pl-4 space-y-1"><li>実習実施計画書の作成。</li><li>機構への提出・審査・認定。</li><li>※書類不備があると長引くため、正確性が求められます。</li></ul></div>`
+            },
+            {
+                id: 'phase5', label: '5. ビザ申請書類作成', range: [5.5, 6.5], color: '#f59e0b',
+                content: `<h3 class="text-lg font-bold text-amber-700 mb-2">5. ビザ(CoE)申請</h3><p class="text-xs text-stone-500 mb-3">目安期間: 6ヶ月目</p><div class="space-y-3 text-sm text-stone-700"><p><strong>【入管手続き】</strong><br>計画認定を受けたら、入国管理局へ在留資格認定証明書（CoE）の交付申請を行います。</p><ul class="list-disc pl-4 space-y-1"><li>認定通知書を添付して申請。</li><li>CoEが交付されたら原本を現地へ送付し、現地で査証（ビザ）を取得してもらいます。</li></ul></div>`
+            },
+            {
+                id: 'phase6', label: '6. 来日・入国後講習', range: [6.5, 7.5], color: '#3b82f6',
+                content: `<h3 class="text-lg font-bold text-blue-700 mb-2">6. 来日・法定講習</h3><p class="text-xs text-stone-500 mb-3">目安期間: 7ヶ月目 (約1ヶ月間)</p><div class="space-y-3 text-sm text-stone-700"><p><strong>【入国・学習】</strong><br>来日後すぐに働くことはできません。</p><div class="bg-blue-50 p-2 rounded border border-blue-100"><strong>法定講習（約1ヶ月）:</strong><br>日本語、生活ルール、法的保護（労基法等）などの座学が義務付けられています。</div></div>`
+            },
+            {
+                id: 'phase7', label: '7. 配属・監理開始', range: [7.5, 9.0], color: '#22c55e',
+                content: `<h3 class="text-lg font-bold text-green-700 mb-2">7. 企業配属・監理業務</h3><p class="text-xs text-stone-500 mb-3">期間: 配属後〜実習終了まで</p><div class="space-y-3 text-sm text-stone-700"><p><strong>【実習開始】</strong><br>講習終了後、企業へ配属されます。</p><ul class="list-disc pl-4 space-y-1"><li><strong>定期監査:</strong> 毎月企業を訪問し、不当な低賃金や違法残業がないかチェックします。</li><li><strong>管理費受領:</strong> 毎月、監理費を企業から受領します。</li></ul></div>`
+            }
+        ];
+
+        // --- Audit Quiz Data (5 Questions) ---
+        const quizQuestions = [
+            {
+                title: "1. 36協定と残業時間",
+                text: "監査にてタイムカードを確認したところ、ある月の残業時間が80時間を超えている実習生がいました。企業は「忙しい時期だから本人も納得している」と言っていますが、36協定の特別条項（限度時間を超える特例）の届出はしていません。",
+                options: [
+                    { text: "本人が納得しており、残業代も払っているので問題ない", correct: false },
+                    { text: "特別条項の届出がない場合、月45時間を超える残業は違法である", correct: true }
+                ],
+                explanation: "<strong>36協定の特別条項なしの場合、原則として月45時間・年360時間が上限です。</strong><br>これを超える残業は労働基準法違反となります。本人の同意があっても、法律の上限を超えることはできません。直ちに是正勧告を行い、長時間労働を解消させる必要があります。"
+            },
+            {
+                title: "2. 地域別最低賃金の改定",
+                text: "10月にその県の最低賃金が950円から980円に改定されました。11月の監査で賃金台帳を確認すると、実習生の時給は契約時の950円のままでした。企業担当者は「契約期間中は契約時の時給で良いはずだ」と主張しています。",
+                options: [
+                    { text: "契約書に950円とあるので、次回の契約更新まではそのままで良い", correct: false },
+                    { text: "契約に関わらず、改定日から新しい最低賃金以上を支払う必要がある", correct: true }
+                ],
+                explanation: "<strong>最低賃金法は強行法規です。</strong><br>労働契約で最低賃金を下回る金額を定めていても、法律の改定と同時にその部分は無効となり、自動的に最低賃金額まで引き上げられます。10月の改定日以降の給与については、差額を追加支給するよう指導しなければなりません。"
+            },
+            {
+                title: "3. パスポートの管理",
+                text: "実習生から「パスポートを社長に預けている」と聞きました。社長に確認すると、「失くすと大変だし、勝手に逃げ出さないように安全のために金庫で預かっているだけだ。返してほしければいつでも返す」と言っています。",
+                options: [
+                    { text: "合意の上で預かっており、安全管理目的ならば容認できる", correct: false },
+                    { text: "いかなる理由があっても、パスポートの保管・管理は禁止されている", correct: true }
+                ],
+                explanation: "<strong>パスポートや在留カードの保管は法律で厳しく禁止されています（技能実習法・入管法）。</strong><br>「失くさないため」という親切心であっても、雇用主が保管することは人権侵害（移動の自由の制限）につながるため、絶対に行ってはいけません。直ちに本人へ返却させてください。"
+            },
+            {
+                title: "4. 給与からの控除（天引き）",
+                text: "給与明細を見ると、社会保険料や税金の他に「光熱費 10,000円」と「親睦会費 3,000円」が毎月引かれています。労使協定（24協定）を確認しましたが、これらの項目についての記載はありませんでした。",
+                options: [
+                    { text: "実際に掛かっている費用であれば、天引きしても問題ない", correct: false },
+                    { text: "労使協定に記載のない項目の天引きは、全額払いの原則に違反する", correct: true }
+                ],
+                explanation: "<strong>法定控除（税・社保）以外を天引きするには、書面による労使協定が必要です。</strong><br>協定に記載がない項目を勝手に引くことは、労働基準法24条（全額払いの原則）違反です。一度全額を支払い、別途徴収するか、速やかに労使協定を締結し直す必要があります。"
+            },
+            {
+                title: "5. 強制貯金の禁止",
+                text: "企業が実習生に対し、「帰国時にお金が残っていないと困るだろうから、毎月2万円を会社が積み立てておいてあげる。通帳は会社が管理する」と提案し、実行しようとしています。",
+                options: [
+                    { text: "実習生の将来を考えた良い仕組みなので推奨する", correct: false },
+                    { text: "強制貯金にあたり、技能実習法および労基法で禁止されている", correct: true }
+                ],
+                explanation: "<strong>雇用契約に付随して貯蓄を強制すること、および通帳を保管することは禁止されています。</strong><br>これは「強制労働」につながる恐れがあるためです。本人が任意で自分の口座に貯金するのは自由ですが、会社が管理したり、天引きで積み立てたりすることは絶対にあってはなりません。"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+
+        // --- Logic Implementation ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Gantt Chart
+            const ctx = document.getElementById('ganttChart').getContext('2d');
+            const labels = ganttData.map(d => d.label);
+            const dataPoints = ganttData.map(d => d.range);
+            const bgColors = ganttData.map(d => d.color);
+
+            const ganttChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '業務期間',
+                        data: dataPoints,
+                        backgroundColor: bgColors,
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { min: 0, max: 9, ticks: { stepSize: 1 } },
+                        y: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } },
+                    onClick: (e) => {
+                        const points = ganttChart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+                        if (points.length) updateDetailPanel(points[0].index);
+                    }
+                }
+            });
+
+            updateDetailPanel(0); // Init Gantt Detail
+            renderQuiz(); // Init Quiz
+        });
+
+        // Gantt Detail Update
+        function updateDetailPanel(index) {
+            const panel = document.getElementById('detail-panel');
+            const data = ganttData[index];
+            panel.classList.remove('fade-in');
+            void panel.offsetWidth;
+            panel.classList.add('fade-in');
+            panel.innerHTML = data.content;
+        }
+
+        // Quiz Logic
+        function renderQuiz() {
+            const q = quizQuestions[currentQuestionIndex];
+            
+            // Update Text
+            document.getElementById('quiz-progress').textContent = currentQuestionIndex + 1;
+            document.getElementById('q-title').textContent = q.title;
+            document.getElementById('q-text').textContent = q.text;
+
+            // Update Options
+            const optionsContainer = document.getElementById('q-options');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "quiz-option w-full text-left p-4 rounded-lg border border-stone-300 hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200 bg-white shadow-sm flex items-center group";
+                btn.innerHTML = `
+                    <div class="w-6 h-6 rounded-full border-2 border-stone-300 mr-3 group-hover:border-indigo-500 flex items-center justify-center text-xs font-bold text-stone-300 group-hover:text-indigo-500">
+                        ${String.fromCharCode(65 + idx)}
+                    </div>
+                    <span class="text-stone-700 font-medium">${opt.text}</span>
+                `;
+                btn.onclick = () => checkAnswer(opt.correct, q.explanation);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Reset Right Panel
+            document.getElementById('feedback-placeholder').classList.remove('hidden');
+            document.getElementById('feedback-content').classList.add('hidden');
+            
+            // Button state
+            const nextBtn = document.getElementById('next-btn');
+            if (currentQuestionIndex === quizQuestions.length - 1) {
+                nextBtn.innerHTML = "全問終了 (最初に戻る)";
+                nextBtn.onclick = () => {
+                    currentQuestionIndex = 0;
+                    renderQuiz();
+                };
+            } else {
+                nextBtn.innerHTML = "次の問題へ進む &rarr;";
+                nextBtn.onclick = nextQuestion;
+            }
+        }
+
+        function checkAnswer(isCorrect, explanation) {
+            const placeholder = document.getElementById('feedback-placeholder');
+            const content = document.getElementById('feedback-content');
+            const header = document.getElementById('feedback-header');
+            const text = document.getElementById('feedback-text');
+
+            placeholder.classList.add('hidden');
+            content.classList.remove('hidden');
+            content.classList.remove('slide-in'); // Reset anim
+            void content.offsetWidth;
+            content.classList.add('slide-in');
+
+            if (isCorrect) {
+                header.innerHTML = `<span class="text-green-600 text-3xl">✅</span><span class="text-green-800">正解です！</span>`;
+                header.className = "text-2xl font-bold mb-4 flex items-center justify-center gap-2 bg-green-50 py-3 rounded-lg border border-green-100";
+            } else {
+                header.innerHTML = `<span class="text-red-600 text-3xl">❌</span><span class="text-red-800">不正解...</span>`;
+                header.className = "text-2xl font-bold mb-4 flex items-center justify-center gap-2 bg-red-50 py-3 rounded-lg border border-red-100";
+            }
+
+            text.innerHTML = explanation;
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < quizQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderQuiz();
+            } else {
+                // Should be handled by button text change, but fallback here
+                currentQuestionIndex = 0;
+                renderQuiz();
+            }
+        }
+
+    </script>
+</body>
+</html>
