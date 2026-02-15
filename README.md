@@ -1,0 +1,1 @@
+# trainingresume.to.newcommer
